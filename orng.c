@@ -347,10 +347,12 @@ void execute_pinch(int fd, uint32_t device_flags, int touch1_x1,
 
 void execute_keyup(int fd, int key) {
   write_event(fd, EV_KEY, key, 0);
+  write_event(fd, EV_SYN, SYN_REPORT, 0);
 }
 
 void execute_keydown(int fd, int key) {
   write_event(fd, EV_KEY, key, 1);
+  write_event(fd, EV_SYN, SYN_REPORT, 0);
 }
 
 uint32_t figure_out_events_device_reports(int fd) {
@@ -466,7 +468,7 @@ int main(int argc, char *argv[])
   }
   device = argv[optind];
   script_file = argv[optind + 1];
-
+/*
   fd = open(device, O_RDWR);
   if(fd < 0) {
     fprintf(stderr, "could not open %s, %s\n", device, strerror(errno));
@@ -489,7 +491,7 @@ int main(int argc, char *argv[])
     // just exit
     return 0;
   }
-
+*/
   FILE *f = fopen(script_file, "r");
   if (!f) {
     printf("Unable to read file %s", script_file);
@@ -541,11 +543,25 @@ int main(int argc, char *argv[])
         args[num_args] = atoi(arg);
         num_args++;
       }
-
+      uint32_t device_flags;
       if (strcmp(cmd, "tap") == 0) {
+        fd = open("/dev/input/event0", O_RDWR);
+        if(fd < 0) {
+          fprintf(stderr, "could not open %s, %s\n", "/dev/input/event0", strerror(errno));
+          return 1;
+        }
+
+        device_flags = figure_out_events_device_reports(fd);
         checkArguments(cmd, num_args, 4, lineCount);
         execute_tap(fd, device_flags, args[0], args[1], args[2], args[3]);
       } else if (strcmp(cmd, "drag") == 0) {
+        fd = open("/dev/input/event0", O_RDWR);
+        if(fd < 0) {
+          fprintf(stderr, "could not open %s, %s\n", "/dev/input/event0", strerror(errno));
+          return 1;
+        }
+
+        device_flags = figure_out_events_device_reports(fd);
         checkArguments(cmd, num_args, 6, lineCount);
         execute_drag(fd, device_flags, args[0], args[1], args[2],
                      args[3], args[4], args[5]);
@@ -553,14 +569,47 @@ int main(int argc, char *argv[])
         checkArguments(cmd, num_args, 1, lineCount);
         execute_sleep(args[0]);
       } else if (strcmp(cmd, "pinch") == 0) {
+        fd = open("/dev/input/event0", O_RDWR);
+        if(fd < 0) {
+          fprintf(stderr, "could not open %s, %s\n", "/dev/input/event0", strerror(errno));
+          return 1;
+        }
+
+        device_flags = figure_out_events_device_reports(fd);
         checkArguments(cmd, num_args, 10, lineCount);
         execute_pinch(fd, device_flags, args[0], args[1], args[2],
                       args[3], args[4], args[5], args[6], args[7], args[8],
                       args[9]);
       } else if (strcmp(cmd, "keyup") == 0) {
+        if (args[0] == 114 || args[0] == 116) {
+          fd = open("/dev/input/event5", O_RDWR);
+        } else if (args[0] == 115) {
+          fd = open("/dev/input/event6", O_RDWR);
+        } else {
+          fd = open("/dev/input/event0", O_RDWR);
+        }
+        if(fd < 0) {
+          fprintf(stderr, "could not open %s, %s\n", "/dev/input/event0", strerror(errno));
+          return 1;
+        }
+
+        device_flags = figure_out_events_device_reports(fd);
         checkArguments(cmd, num_args, 1, lineCount);
         execute_keyup(fd, args[0]);
       } else if (strcmp(cmd, "keydown") == 0) {
+        if (args[0] == 114 || args[0] == 116) {
+          fd = open("/dev/input/event5", O_RDWR);
+        } else if (args[0] == 115) {
+          fd = open("/dev/input/event6", O_RDWR);
+        } else {
+          fd = open("/dev/input/event0", O_RDWR);
+        }
+        if(fd < 0) {
+          fprintf(stderr, "could not open %s, %s\n", "/dev/input/event0", strerror(errno));
+          return 1;
+        }
+
+        device_flags = figure_out_events_device_reports(fd);
         checkArguments(cmd, num_args, 1, lineCount);
         execute_keydown(fd, args[0]);
       } else {
