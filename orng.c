@@ -440,7 +440,8 @@ int main(int argc, char *argv[])
   int c;
   int argcount;
   int print_device_diagnostics = 0;
-  const char *device;
+  char *device;
+  const char *tdevice, *hdevice, *pdevice, *vudevice, *vddevice;
   const char *script_file;
 
   int num_args = 0;
@@ -464,12 +465,18 @@ int main(int argc, char *argv[])
             "Options:\n"
             "  -i                  print device information\n"
             "  -t                  print event timings\n", argv[0]);
-    return 1;
+    return 1; 
   }
   device = argv[optind];
+  tdevice = strtok(device,"$");
+  hdevice = strtok(NULL, "$");
+  pdevice = strtok(NULL, "$");
+  vudevice = strtok(NULL, "$");
+  vddevice = strtok(NULL, "$");
+
   script_file = argv[optind + 1];
-/*
-  fd = open(device, O_RDWR);
+
+  fd = open(tdevice, O_RDWR);
   if(fd < 0) {
     fprintf(stderr, "could not open %s, %s\n", device, strerror(errno));
     return 1;
@@ -491,7 +498,8 @@ int main(int argc, char *argv[])
     // just exit
     return 0;
   }
-*/
+  close(fd);
+
   FILE *f = fopen(script_file, "r");
   if (!f) {
     printf("Unable to read file %s", script_file);
@@ -545,9 +553,9 @@ int main(int argc, char *argv[])
       }
       uint32_t device_flags;
       if (strcmp(cmd, "tap") == 0) {
-        fd = open("/dev/input/event0", O_RDWR);
+        fd = open(tdevice, O_RDWR);
         if(fd < 0) {
-          fprintf(stderr, "could not open %s, %s\n", "/dev/input/event0", strerror(errno));
+          fprintf(stderr, "could not open %s, %s\n", tdevice, strerror(errno));
           return 1;
         }
 
@@ -555,9 +563,9 @@ int main(int argc, char *argv[])
         checkArguments(cmd, num_args, 4, lineCount);
         execute_tap(fd, device_flags, args[0], args[1], args[2], args[3]);
       } else if (strcmp(cmd, "drag") == 0) {
-        fd = open("/dev/input/event0", O_RDWR);
+        fd = open(tdevice, O_RDWR);
         if(fd < 0) {
-          fprintf(stderr, "could not open %s, %s\n", "/dev/input/event0", strerror(errno));
+          fprintf(stderr, "could not open %s, %s\n", tdevice, strerror(errno));
           return 1;
         }
 
@@ -569,9 +577,9 @@ int main(int argc, char *argv[])
         checkArguments(cmd, num_args, 1, lineCount);
         execute_sleep(args[0]);
       } else if (strcmp(cmd, "pinch") == 0) {
-        fd = open("/dev/input/event0", O_RDWR);
+        fd = open(tdevice, O_RDWR);
         if(fd < 0) {
-          fprintf(stderr, "could not open %s, %s\n", "/dev/input/event0", strerror(errno));
+          fprintf(stderr, "could not open %s, %s\n", tdevice, strerror(errno));
           return 1;
         }
 
@@ -581,15 +589,20 @@ int main(int argc, char *argv[])
                       args[3], args[4], args[5], args[6], args[7], args[8],
                       args[9]);
       } else if (strcmp(cmd, "keyup") == 0) {
-        if (args[0] == 114 || args[0] == 116) {
-          fd = open("/dev/input/event5", O_RDWR);
-        } else if (args[0] == 115) {
-          fd = open("/dev/input/event6", O_RDWR);
-        } else {
-          fd = open("/dev/input/event0", O_RDWR);
+        switch (args[0]) {
+          case 102:
+            fd = open(hdevice, O_RDWR);
+          case 114:
+            fd = open(vddevice, O_RDWR);
+          case 115:
+            fd = open(vudevice, O_RDWR);
+          case 116:
+            fd = open(pdevice, O_RDWR);
+          default: 
+            fd = open(tdevice, O_RDWR);
         }
         if(fd < 0) {
-          fprintf(stderr, "could not open %s, %s\n", "/dev/input/event0", strerror(errno));
+          fprintf(stderr, "could not open device path, %s\n", strerror(errno));
           return 1;
         }
 
@@ -597,15 +610,20 @@ int main(int argc, char *argv[])
         checkArguments(cmd, num_args, 1, lineCount);
         execute_keyup(fd, args[0]);
       } else if (strcmp(cmd, "keydown") == 0) {
-        if (args[0] == 114 || args[0] == 116) {
-          fd = open("/dev/input/event5", O_RDWR);
-        } else if (args[0] == 115) {
-          fd = open("/dev/input/event6", O_RDWR);
-        } else {
-          fd = open("/dev/input/event0", O_RDWR);
+        switch (args[0]) {
+          case 102:
+            fd = open(hdevice, O_RDWR);
+          case 114:
+            fd = open(vddevice, O_RDWR);
+          case 115:
+            fd = open(vudevice, O_RDWR);
+          case 116:
+            fd = open(pdevice, O_RDWR);
+          default: 
+            fd = open(tdevice, O_RDWR);
         }
         if(fd < 0) {
-          fprintf(stderr, "could not open %s, %s\n", "/dev/input/event0", strerror(errno));
+          fprintf(stderr, "could not open device path, %s\n", strerror(errno));
           return 1;
         }
 
@@ -616,6 +634,7 @@ int main(int argc, char *argv[])
         printf("Unrecognized command at line %d: '%s'\n", lineCount, cmd);
         return 1;
       }
+      close(fd);
     }
   }
   free(line);
