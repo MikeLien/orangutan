@@ -590,14 +590,18 @@ int main(int argc, char *argv[])
                       args[9]);
       } else if (strcmp(cmd, "keyup") == 0) {
         switch (args[0]) {
-          case 102:
+          case KEY_HOME:
             fd = open(hdevice, O_RDWR);
-          case 114:
+            break;
+          case KEY_VOLUMEDOWN:
             fd = open(vddevice, O_RDWR);
-          case 115:
+            break;
+          case KEY_VOLUMEUP:
             fd = open(vudevice, O_RDWR);
-          case 116:
+            break;
+          case KEY_POWER:
             fd = open(pdevice, O_RDWR);
+            break;
           default: 
             fd = open(tdevice, O_RDWR);
         }
@@ -611,14 +615,18 @@ int main(int argc, char *argv[])
         execute_keyup(fd, args[0]);
       } else if (strcmp(cmd, "keydown") == 0) {
         switch (args[0]) {
-          case 102:
+          case KEY_HOME:
             fd = open(hdevice, O_RDWR);
-          case 114:
+            break;
+          case KEY_VOLUMEDOWN:
             fd = open(vddevice, O_RDWR);
-          case 115:
+            break;
+          case KEY_VOLUMEUP:
             fd = open(vudevice, O_RDWR);
-          case 116:
+            break;
+          case KEY_POWER:
             fd = open(pdevice, O_RDWR);
+            break;
           default: 
             fd = open(tdevice, O_RDWR);
         }
@@ -634,7 +642,8 @@ int main(int argc, char *argv[])
         printf("Unrecognized command at line %d: '%s'\n", lineCount, cmd);
         return 1;
       }
-      close(fd);
+      if (strcmp(cmd, "sleep") != 0)
+        close(fd);
     }
   }
   free(line);
